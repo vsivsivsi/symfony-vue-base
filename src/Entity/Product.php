@@ -2,87 +2,45 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Core\Annotation\ApiResource;
 use App\Repository\ProductRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\HttpFoundation\File\File;
-use Symfony\Component\Serializer\Annotation\Groups;
-use Vich\UploaderBundle\Mapping\Annotation as Vich;
-use Symfony\Component\Validator\Constraints\DateTime;
-use Gedmo\Mapping\Annotation as Gedmo;
 
-/**
- * @ORM\Entity(repositoryClass=ProductRepository::class)
- * @Vich\Uploadable()
- */
-#[ApiResource(iri: 'products', normalizationContext: ['groups' => ['product']])]
+#[ORM\Entity(repositoryClass: ProductRepository::class)]
 class Product
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     * @Groups({"product"})
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
 
-    /**
-     * @ORM\Column(type="string", length=128)
-     * @Groups({"product"})
-     */
+    #[ORM\Column(type: 'string', length: 255)]
     private $name;
 
-    /**
-     * @ORM\Column(length=128, type="strring", unique=true)
-     * @Gedmo\Slug(fields={"name", "id"}, style="camel", updatable=false,)
-     */
-    private $slug;
-
-    /**
-     * @ORM\Column(type="string", length=128)
-     * @Groups({"product"})
-     */
-    private ?string $imageName = null;
-
-    /**
-     * @Vich\UploadableField(mapping="product_image", fileNameProperty="imageName")
-     */
-    private $imageFile;
-
-    /**
-     * @ORM\Column(type="text")
-     * @Groups({"product"})
-     */
+    #[ORM\Column(type: 'text')]
     private $description;
 
-    /**
-     * @ORM\Column(type="integer", nullable=true)
-     * @Groups({"product"})
-     */
+    #[ORM\Column(type: 'integer', nullable: true)]
     private $price;
 
-    /**
-     * @ORM\Column(type="integer")
-     * @Groups({"product"})
-     */
-    private $stockQuantity;
+    #[ORM\Column(type: 'integer')]
+    private $quantity;
 
-    /** @var \DateTimeInterface|null */
-    private $updatedAt;
+    #[ORM\Column(type: 'integer')]
+    private $status;
 
-    /**
-     * @ORM\ManyToOne(targetEntity=Brand::class, inversedBy="products")
-     * @ORM\JoinColumn(nullable=false)
-     * @Groups({"product"})
-     */
+    #[ORM\ManyToOne(targetEntity: Brand::class, inversedBy: 'products')]
+    #[ORM\JoinColumn(nullable: false)]
     private $brand;
 
-    /**
-     * @ORM\ManyToOne(targetEntity=Category::class, inversedBy="products")
-     * @ORM\JoinColumn(nullable=false)
-     * @Groups({"product"})
-     */
-    private $category;
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: BookingItem::class)]
+    private $bookingItems;
+
+    public function __construct()
+    {
+        $this->bookingItems = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -125,14 +83,26 @@ class Product
         return $this;
     }
 
-    public function getStockQuantity(): ?int
+    public function getQuantity(): ?int
     {
-        return $this->stockQuantity;
+        return $this->quantity;
     }
 
-    public function setStockQuantity(int $stockQuantity): self
+    public function setQuantity(int $quantity): self
     {
-        $this->stockQuantity = $stockQuantity;
+        $this->quantity = $quantity;
+
+        return $this;
+    }
+
+    public function getStatus(): ?bool
+    {
+        return $this->status;
+    }
+
+    public function setStatus(int $status): self
+    {
+        $this->status = $status;
 
         return $this;
     }
@@ -149,72 +119,32 @@ class Product
         return $this;
     }
 
-    public function getCategory(): ?Category
-    {
-        return $this->category;
-    }
-
-    public function setCategory(?Category $category): self
-    {
-        $this->category = $category;
-
-        return $this;
-    }
-
     /**
-     * @return mixed
+     * @return Collection|BookingItem[]
      */
-    public function getImageFile():?File
+    public function getBookingItems(): Collection
     {
-        return $this->imageFile;
+        return $this->bookingItems;
     }
 
-    /**
-     * @param mixed $imageFile
-     */
-    public function setImageFile(?File $imageFile = null): self
+    public function addBookingItem(BookingItem $bookingItem): self
     {
-        $this->imageFile = $imageFile;
-
-        if (null === $imageFile) {
-            $this->updatedAt = new \DateTime();
+        if (!$this->bookingItems->contains($bookingItem)) {
+            $this->bookingItems[] = $bookingItem;
+            $bookingItem->setProduct($this);
         }
 
         return $this;
     }
 
-    /**
-     * @return string|null
-     */
-    public function getImageName(): ?string
+    public function removeBookingItem(BookingItem $bookingItem): self
     {
-        return $this->imageName;
-    }
-
-    /**
-     * @param string $imageName
-     */
-    public function setImageName(string $imageName): self
-    {
-        $this->imageName = $imageName;
-
-        return $this;
-    }
-
-    /**
-     * @return \DateTimeInterface|null
-     */
-    public function getUpdatedAt(): ?\DateTimeInterface
-    {
-        return $this->updatedAt;
-    }
-
-    /**
-     * @param \DateTimeInterface|null $updatedAt
-     */
-    public function setUpdatedAt(?\DateTimeInterface $updatedAt): self
-    {
-        $this->updatedAt = $updatedAt;
+        if ($this->bookingItems->removeElement($bookingItem)) {
+            // set the owning side to null (unless already changed)
+            if ($bookingItem->getProduct() === $this) {
+                $bookingItem->setProduct(null);
+            }
+        }
 
         return $this;
     }
