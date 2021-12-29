@@ -18,19 +18,28 @@ RUN pecl install xdebug \
     && echo "xdebug.client_host = host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini 
 
 # Install SQL Server extensions
+RUN curl http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/multiarch-support_2.27-3ubuntu1_amd64.deb > /tmp/multiarch-support_2.27-3ubuntu1_amd64.deb \
+    && apt-get install /tmp/multiarch-support_2.27-3ubuntu1_amd64.deb \
+    && rm /tmp/multiarch-support_2.27-3ubuntu1_amd64.deb
 
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-&& curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | tee /etc/apt/sources.list.d/msprod.list 
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+#&& curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | tee /etc/apt/sources.list.d/msprod.list
+
+RUN curl https://packages.microsoft.com/config/debian/10/prod.list > /tmp/ms_prod.list \
+    && cat /tmp/ms_prod.list
+RUN mv /tmp/ms_prod.list /etc/apt/sources.list.d/mssql-release.list
+
 
 RUN apt-get update \
 && apt-get install -y --no-install-recommends locales apt-transport-https \
 && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
-&& locale-gen 
+&& locale-gen \
+&& apt-get update
 
 RUN ACCEPT_EULA=Y apt-get install -y unixodbc-dev mssql-tools
-RUN apt-get install -y unixodbc-dev libgssapi-krb5-2
+RUN apt-get install -y libgssapi-krb5-2
 RUN pecl install sqlsrv
-RUN pecl install pdo_sqlsrv
+RUN pecl install pdo_sqlsrv-5.10.0beta2
 RUN docker-php-ext-enable sqlsrv
 RUN docker-php-ext-enable pdo_sqlsrv
 
@@ -54,7 +63,7 @@ RUN curl -sS https://get.symfony.com/cli/installer | bash
 RUN mv /root/.symfony/bin/symfony /usr/local/bin/symfony
 
 RUN git config --global user.email "sergii.vovk@rgc.ua" && \
-    git config --global user.name "serhii."
+    git config --global user.name "sergii.vovk"
 
 RUN useradd -rm -d /home/www -s /bin/bash -g root -G sudo -u 1000 www
 USER www

@@ -6,39 +6,22 @@ use App\Repository\BrandRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Gedmo\Timestampable\Traits\TimestampableEntity;
-use ApiPlatform\Core\Annotation\ApiResource;
-use Symfony\Component\Serializer\Annotation\Groups;
 
-/**
- * @ORM\Entity(repositoryClass=BrandRepository::class)
- */
-#[ApiResource(normalizationContext: ['groups' => ['product']])]
+#[ORM\Entity(repositoryClass: BrandRepository::class)]
 class Brand
 {
-    use TimestampableEntity;
-
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
 
-    /**
-     * @ORM\Column(type="string", length=32)
-     * @Groups({"product"})
-     */
+    #[ORM\Column(type: 'string', length: 255)]
     private $name;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
+    #[ORM\Column(type: 'string', length: 1024)]
     private $description;
 
-    /**
-     * @ORM\OneToMany(targetEntity=Product::class, mappedBy="brand")
-     */
+    #[ORM\OneToMany(mappedBy: 'brand', targetEntity: Product::class)]
     private $products;
 
     public function __construct()
@@ -68,7 +51,7 @@ class Brand
         return $this->description;
     }
 
-    public function setDescription(?string $description): self
+    public function setDescription(string $description): self
     {
         $this->description = $description;
 
@@ -103,10 +86,5 @@ class Brand
         }
 
         return $this;
-    }
-
-    public function __toString(): string
-    {
-        return $this->getName();
     }
 }
